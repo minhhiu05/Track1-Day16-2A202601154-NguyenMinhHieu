@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Notion Teardown — Hello world</title>
+  <style>
+    :root {
+      --ink: #172b4d;
+      --muted: #667085;
+      --blue: #2f80ed;
+      --blue-soft: #eaf3ff;
+      --orange: #f2994a;
+      --green: #16855b;
+      --paper: #f7f9fc;
+      --white: #fff;
+      --line: #dbe4f0;
+      --shadow: 0 18px 50px rgba(23, 43, 77, .12);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #dfe7f2; color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    body { overflow: hidden; }
+    .deck { height: 100vh; position: relative; }
+    .slide {
+      display: none; position: absolute; inset: 0; overflow: auto; padding: clamp(28px, 5vw, 72px);
+      background: radial-gradient(circle at 92% 8%, rgba(47,128,237,.12), transparent 28%), var(--paper);
+    }
+    .slide.active { display: block; animation: enter .28s ease-out; }
+    @keyframes enter { from { opacity: .25; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
+    .slide::before { content: ""; position: absolute; left: 0; top: 0; width: 100%; height: 9px; background: var(--blue); }
+    .slide.last::before { background: var(--ink); }
+    .inner { max-width: 1240px; min-height: calc(100vh - 150px); margin: 0 auto; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 1; }
+    .eyebrow { color: var(--blue); text-transform: uppercase; letter-spacing: .14em; font-size: .78rem; font-weight: 800; margin-bottom: 14px; }
+    h1 { font-size: clamp(3.5rem, 10vw, 8.5rem); line-height: .9; letter-spacing: -.07em; margin: 0 0 24px; }
+    h2 { font-size: clamp(2rem, 4vw, 4rem); line-height: .98; letter-spacing: -.055em; margin: 0 0 28px; }
+    h3 { margin: 0 0 9px; font-size: 1.05rem; }
+    p { font-size: clamp(1rem, 1.5vw, 1.35rem); line-height: 1.55; margin: 0; color: #344054; }
+    .subtitle { max-width: 700px; font-size: clamp(1.2rem, 2.2vw, 2rem); color: #475467; line-height: 1.35; }
+    .team { margin-top: 38px; display: flex; flex-wrap: wrap; gap: 9px; color: var(--muted); font-size: .95rem; }
+    .team span { background: var(--white); border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; }
+    .statement { font-size: clamp(1.7rem, 3.4vw, 3.3rem); line-height: 1.1; letter-spacing: -.04em; max-width: 1050px; margin-bottom: 30px; }
+    .accent { color: var(--blue); }
+    .grid-3, .grid-4, .grid-2 { display: grid; gap: 18px; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .card { background: rgba(255,255,255,.88); border: 1px solid var(--line); border-radius: 20px; padding: 22px; box-shadow: 0 8px 22px rgba(23,43,77,.05); }
+    .card p, .card li { font-size: .98rem; line-height: 1.48; }
+    .card ul { margin: 10px 0 0; padding-left: 19px; }
+    .card li + li { margin-top: 7px; }
+    .number { color: var(--blue); font-weight: 850; font-size: 1.5rem; margin-bottom: 8px; }
+    .tag { display: inline-block; border-radius: 999px; background: var(--blue-soft); color: var(--blue); padding: 5px 9px; font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 12px; }
+    .source { display: inline-block; margin-top: 12px; color: var(--blue); font-size: .74rem; text-decoration: none; font-weight: 700; }
+    .source:hover { text-decoration: underline; }
+    .timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; position: relative; }
+    .timeline::before { content: ""; position: absolute; left: 3%; right: 3%; top: 18px; height: 3px; background: #c9dcf7; }
+    .milestone { position: relative; padding-top: 43px; }
+    .milestone::before { content: ""; position: absolute; top: 10px; left: 18px; width: 16px; height: 16px; border: 4px solid var(--blue); background: var(--paper); border-radius: 50%; z-index: 1; }
+    .year { font-weight: 850; color: var(--blue); margin-bottom: 8px; }
+    .milestone p { font-size: .88rem; }
+    .quote { border-left: 6px solid var(--orange); padding: 8px 0 8px 24px; font-size: clamp(1.45rem, 2.8vw, 2.7rem); line-height: 1.15; letter-spacing: -.04em; max-width: 1000px; }
+    .force { min-height: 160px; }
+    .force strong { display: block; color: var(--blue); margin-bottom: 7px; }
+    .prediction { border-top: 5px solid var(--blue); }
+    .prediction:nth-child(2) { border-top-color: var(--orange); }
+    .prediction:nth-child(3) { border-top-color: var(--green); }
+    .prediction p { font-size: .95rem; }
+    .footer { position: fixed; left: 28px; right: 28px; bottom: 20px; display: flex; justify-content: space-between; align-items: center; z-index: 5; color: #98a2b3; font-size: .78rem; pointer-events: none; }
+    .controls { position: fixed; right: 26px; bottom: 48px; z-index: 10; display: flex; gap: 8px; }
+    button { border: 1px solid var(--line); background: rgba(255,255,255,.94); color: var(--ink); border-radius: 10px; width: 38px; height: 34px; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 12px rgba(23,43,77,.08); }
+    button:hover { background: var(--blue); border-color: var(--blue); color: white; }
+    .progress { position: fixed; left: 0; bottom: 0; height: 4px; width: 0; background: var(--orange); z-index: 11; transition: width .25s ease; }
+    .small { font-size: .86rem; color: var(--muted); }
+    .check { color: var(--green); font-weight: 800; }
+    @media (max-width: 850px) {
+      body { overflow: auto; }
+      .slide { position: relative; min-height: 100vh; }
+      .grid-3, .grid-4, .grid-2, .timeline { grid-template-columns: 1fr 1fr; }
+      .timeline::before { display: none; }
+      .milestone { padding-top: 20px; }
+      .milestone::before { display: none; }
+    }
+    @media print {
+      body { overflow: visible; background: white; }
+      .deck { height: auto; }
+      .slide, .slide.active { display: block; position: relative; min-height: 100vh; page-break-after: always; }
+      .controls, .footer, .progress { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" aria-label="Notion product teardown presentation">
+    <section class="slide active" data-title="Mở đầu">
+      <div class="inner">
+        <div class="eyebrow">Product teardown · Hello world</div>
+        <h1>Notion</h1>
+        <p class="subtitle">Từ workspace linh hoạt đến AI operating system</p>
+        <div class="team">
+          <span>Nguyễn Minh Hiếu</span><span>Nguyễn Ngọc Chi</span><span>Trần Thanh Huyền</span><span>Thiều Thị Ngọc Ánh</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Luận điểm">
+      <div class="inner">
+        <div class="eyebrow">01 · Luận điểm</div>
+        <h2>Notion không chỉ thêm AI vào app ghi chú.</h2>
+        <p class="statement">Họ đang biến Notion thành <span class="accent">lớp context và hành động</span> cho toàn bộ workflow của cá nhân và đội nhóm.</p>
+        <div class="grid-3">
+          <div class="card"><div class="tag">Moat</div><h3>Dữ liệu có cấu trúc</h3><p>Docs, database, meeting notes và project history tạo data gravity.</p></div>
+          <div class="card"><div class="tag">Workflow</div><h3>Thói quen của team</h3><p>Template, page, shortcut và quy ước làm việc khiến switching cost tăng.</p></div>
+          <div class="card"><div class="tag">Tương lai</div><h3>Agent thực thi</h3><p>Giá trị chuyển từ “giúp tôi viết” sang “giúp tôi hoàn thành outcome”.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Timeline 2018–2023">
+      <div class="inner">
+        <div class="eyebrow">02 · Timeline</div>
+        <h2>Từ building blocks đến knowledge assistant</h2>
+        <div class="timeline">
+          <article class="milestone"><div class="year">2018</div><div class="card"><h3>Notion 2.0</h3><p>Product Hunt giúp tiếp cận power users và startup builders.</p><p class="small"><b>Nguyên lý:</b> Composable primitives → workflow moat.</p><a class="source" href="https://www.producthunt.com/stories/the-makings-of-a-notion-product-and-launching-it-on-product-hunt?comment=1446291" target="_blank">Nguồn ↗</a></div></article>
+          <article class="milestone"><div class="year">11/2022</div><div class="card"><h3>Notion AI alpha</h3><p>Đưa AI trực tiếp vào nơi user đang viết và lưu dữ liệu.</p><p class="small"><b>Nguyên lý:</b> Context before generation.</p><a class="source" href="https://www.notion.com/blog/introducing-notion-ai" target="_blank">Nguồn ↗</a></div></article>
+          <article class="milestone"><div class="year">02/2023</div><div class="card"><h3>AI cho mọi người</h3><p>“Improve Writing” thắng giả định AI phải tạo nội dung từ đầu.</p><p class="small"><b>Nguyên lý:</b> Learning loop.</p><a class="source" href="https://www.notion.com/blog/notion-ai-is-here-for-everyone" target="_blank">Nguồn ↗</a></div></article>
+          <article class="milestone"><div class="year">11/2023</div><div class="card"><h3>Q&amp;A</h3><p>AI chuyển từ writing assistant thành knowledge assistant.</p><p class="small"><b>Nguyên lý:</b> Data gravity / context moat.</p><a class="source" href="https://www.notion.com/blog/introducing-q-and-a?slug=introducing-q-and-a" target="_blank">Nguồn ↗</a></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Timeline 2024–2025">
+      <div class="inner">
+        <div class="eyebrow">03 · Timeline</div>
+        <h2>Từ knowledge assistant đến execution</h2>
+        <div class="grid-4">
+          <div class="card"><div class="number">01/24</div><h3>Notion Calendar</h3><p>Nối docs, deadline và meeting.</p><p class="small"><b>Own the adjacent workflow.</b></p><a class="source" href="https://www.notion.com/releases/2024-01-17" target="_blank">Nguồn ↗</a></div>
+          <div class="card"><div class="number">07/24</div><h3>AI chat/search</h3><p>AI trở thành interface của system of work.</p><p class="small"><b>Giảm context switching.</b></p><a class="source" href="https://www.notion.com/releases/2024-07-29" target="_blank">Nguồn ↗</a></div>
+          <div class="card"><div class="number">05/25</div><h3>Enterprise AI</h3><p>Meeting Notes, Search, Research Mode và connectors.</p><p class="small"><b>Vertical AI / land-and-expand.</b></p><a class="source" href="https://www.notion.com/releases/2025-05-13" target="_blank">Nguồn ↗</a></div>
+          <div class="card"><div class="number">09/25</div><h3>Notion 3.0 Agents</h3><p>Agent tạo docs, database và chạy workflow nhiều bước.</p><p class="small"><b>Assist → execute.</b></p><a class="source" href="https://www.notion.com/blog/introducing-notion-3-0" target="_blank">Nguồn ↗</a></div>
+        </div>
+        <p class="small" style="margin-top:20px"><b>Đã cân nhắc nhưng loại:</b> Charts, Forms, mobile, template gallery — chỉ cải thiện workflow hiện có, chưa đổi định vị/user/moat.</p>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Nguyên lý">
+      <div class="inner">
+        <div class="eyebrow">04 · Revert về nguyên lý</div>
+        <h2>5 pattern tạo thành kho kinh nghiệm của Notion</h2>
+        <div class="grid-3">
+          <div class="card"><div class="number">01</div><h3>Context before generation</h3><p>AI tốt hơn khi nằm trong nơi user đang làm việc và có sẵn context.</p></div>
+          <div class="card"><div class="number">02</div><h3>Learning loop</h3><p>Hành vi thực tế định nghĩa “AI tốt”, không phải giả định ban đầu.</p></div>
+          <div class="card"><div class="number">03</div><h3>Own adjacent workflow</h3><p>Docs, task, deadline và meeting được nối thành một system.</p></div>
+          <div class="card"><div class="number">04</div><h3>Data gravity</h3><p>Dữ liệu tích lũy làm AI hữu ích hơn và củng cố lý do quay lại.</p></div>
+          <div class="card"><div class="number">05</div><h3>Assist → execute</h3><p>Khi AI đủ đáng tin, giá trị chuyển sang hoàn thành outcome.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="User & JTBD">
+      <div class="inner">
+        <div class="eyebrow">05 · Tệp user &amp; JTBD</div>
+        <h2>Ai đang thuê Notion để làm việc gì?</h2>
+        <div class="grid-2">
+          <div class="card" style="border-top:5px solid var(--blue)">
+            <div class="tag">Early adopters</div><h3>Founder / PM / designer / engineer ở startup nhỏ</h3>
+            <ul><li>Thích tự xây workflow, chấp nhận learning curve.</li><li>Đến từ Product Hunt, startup community, template community.</li><li><b>JTBD:</b> tự lắp notes–project–database linh hoạt thay cho nhiều công cụ rời rạc.</li></ul>
+          </div>
+          <div class="card" style="border-top:5px solid var(--orange)">
+            <div class="tag">Tệp hiện tại</div><h3>Team Product, Marketing, HR, Sales, Support, Operations</h3>
+            <ul><li>Cần company knowledge và project context chung.</li><li>Dữ liệu đến từ Docs/Drive, Slack, Jira/Linear, Calendar.</li><li><b>JTBD:</b> tìm câu trả lời, tóm tắt context và biến tri thức thành hành động.</li></ul>
+          </div>
+        </div>
+        <p class="quote" style="margin-top:30px">Segment shift: từ “tôi tự tổ chức ghi chú thế nào” sang “cả công ty tìm và sử dụng tri thức thế nào”.</p>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Switching cost">
+      <div class="inner">
+        <div class="eyebrow">06 · Switching cost</div>
+        <h2>4 forces giữ user ở lại</h2>
+        <div class="grid-4">
+          <div class="card force"><strong>Push</strong><p>Thông tin phân tán, tìm kiếm chậm, lặp lại câu hỏi và “work about work”.</p></div>
+          <div class="card force"><strong>Pull</strong><p>Workspace linh hoạt + AI search, research, meeting notes và agent.</p></div>
+          <div class="card force"><strong>Habit</strong><p>Page, database, template, shortcut và quy ước của cả team.</p></div>
+          <div class="card force"><strong>Anxiety</strong><p>Migrate dữ liệu, learning curve, quyền truy cập, hiệu năng, offline và độ tin cậy AI.</p></div>
+        </div>
+        <p class="quote" style="margin-top:30px">Lực giữ mạnh nhất = <span class="accent">data gravity + habit</span>. Notion trở thành bộ nhớ vận hành của tổ chức.</p>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Dự đoán">
+      <div class="inner">
+        <div class="eyebrow">07 · Phán đoán</div>
+        <h2>Ba dự đoán trong 6–12 tháng tới</h2>
+        <div class="grid-3">
+          <div class="card prediction"><div class="tag">Mở rộng tính năng</div><h3>Custom Agents cho team</h3><p>Onboarding, weekly update, research brief và workflow xuyên công cụ.</p><p class="small"><b>Lập luận:</b> Q&amp;A → Connectors → Agents; user cần giảm work about work.</p></div>
+          <div class="card prediction"><div class="tag">Mở rộng segment</div><h3>Đi sâu vào enterprise</h3><p>Product, Sales, Support, HR và Operations với knowledge hub chung.</p><p class="small"><b>Lập luận:</b> Enterprise Search/Meeting Notes nối trực tiếp với nhu cầu team.</p></div>
+          <div class="card prediction"><div class="tag">Monetization / Big Tech</div><h3>AI cấp doanh nghiệp</h3><p>Governance, permission-aware search, connector và Agent workflow.</p><p class="small"><b>Lập luận:</b> moat dữ liệu/workflow, thay vì model riêng.</p></div>
+        </div>
+        <p class="small" style="margin-top:20px"><span class="check">● Tự tin nhất:</span> Custom Agents cho team. Giả định cần theo dõi: Agent phải tiết kiệm nhiều thời gian hơn chi phí kiểm tra output.</p>
+      </div>
+    </section>
+
+    <section class="slide last" data-title="Kết luận">
+      <div class="inner">
+        <div class="eyebrow">08 · Kết luận &amp; thảo luận</div>
+        <p class="quote">Notion thắng khi AI không đứng bên cạnh workflow — mà trở thành lớp context và hành động của workflow đó.</p>
+        <div class="grid-2" style="margin-top:34px">
+          <div class="card"><h3>AI Log</h3><p>AI hỗ trợ tìm nguồn, tóm tắt, tạo giả thuyết và định dạng. Nhóm mở link gốc, loại mốc nhỏ và chịu trách nhiệm chọn nguyên lý, segment, JTBD và dự đoán.</p></div>
+          <div class="card"><h3>Câu hỏi thảo luận</h3><p>Nếu data gravity biến mất — dữ liệu được migrate dễ dàng và workflow không còn khóa user — Notion còn moat nào?</p></div>
+        </div>
+        <p class="small" style="margin-top:30px">Memo đầy đủ: <b>memo.md</b> · Nhóm: <b>Hello world</b></p>
+      </div>
+    </section>
+  </main>
+
+  <div class="footer"><span>Notion Teardown · Hello world</span><span id="counter">1 / 9</span></div>
+  <div class="controls" aria-label="Điều khiển slide"><button id="prev" title="Slide trước">←</button><button id="next" title="Slide sau">→</button></div>
+  <div class="progress" id="progress"></div>
+
+  <script>
+    const slides = [...document.querySelectorAll('.slide')];
+    const counter = document.getElementById('counter');
+    const progress = document.getElementById('progress');
+    let current = 0;
+    function show(index) {
+      current = (index + slides.length) % slides.length;
+      slides.forEach((slide, i) => slide.classList.toggle('active', i === current));
+      counter.textContent = `${current + 1} / ${slides.length}`;
+      progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+      history.replaceState(null, '', `#${current + 1}`);
+    }
+    function next() { show(current + 1); }
+    function prev() { show(current - 1); }
+    document.getElementById('next').addEventListener('click', next);
+    document.getElementById('prev').addEventListener('click', prev);
+    document.addEventListener('keydown', event => {
+      if (['ArrowRight', 'PageDown', ' '].includes(event.key)) { event.preventDefault(); next(); }
+      if (['ArrowLeft', 'PageUp'].includes(event.key)) { event.preventDefault(); prev(); }
+      if (event.key === 'Home') show(0);
+      if (event.key === 'End') show(slides.length - 1);
+    });
+    const initial = Number(location.hash.slice(1));
+    show(Number.isInteger(initial) && initial > 0 ? initial - 1 : 0);
+  </script>
+</body>
+</html>
